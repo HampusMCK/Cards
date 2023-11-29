@@ -1,419 +1,184 @@
-﻿Deck d = new();
+﻿using System.Numerics;
+using Raylib_cs;
+
+//------------------------------------------Visual Window Data-----------------------------
+Raylib.InitWindow(600, 600, "Texas Holdem");
+int currentMonitor = Raylib.GetCurrentMonitor();
+int windowWidth = Raylib.GetMonitorWidth(currentMonitor) - (Raylib.GetMonitorWidth(currentMonitor) / 8);
+int windowHeight = Raylib.GetMonitorHeight(currentMonitor) - (Raylib.GetMonitorHeight(currentMonitor) / 8);
+Raylib.SetWindowSize(windowWidth, windowHeight);
+Raylib.SetWindowPosition(windowWidth / 16, windowHeight / 16);
+//-------------------------------------------------------------------------------------------
+
+//-----------------------------------References---------------------------------------------
+Deck d = new();
 Human h = new();
 Opponent o = new();
 Table table = new();
-int playerScore;
-int OppScore;
-string result = "";
-string OppResult = "";
+//------------------------------------------------------------------------------------------
 
-while (h.money > 0 && o.money > 0)
+//------------------------------------Point&Click Data------------------------------------
+Vector2 MousePos = new Vector2();
+//---------------------------------------------------------------------------------------
+
+//-----------------------------------Score Data-------------------------------------------
+int playerScore = 0;
+int oppScore = 0;
+string playerResult = "";
+string oppResult = "";
+//------------------------------------------------------------------------------------------
+
+//--------------------------------Scene Managment-------------------------------------------
+bool myTurn = false;
+int step = 0;
+//------------------------------------------------------------------------------------------
+
+// ---------------------------------------------------Buttons------------------------------------------
+int buttonWidth = windowWidth / 7;
+int buttonHeight = windowHeight / 12;
+int xPlace = windowWidth / 8;
+int yPlace = windowHeight - (windowHeight / 8);
+Rectangle Bet = new Rectangle(xPlace, yPlace, buttonWidth, buttonHeight);
+Rectangle Call = new Rectangle(xPlace + (buttonWidth * 1.5f), yPlace, buttonWidth, buttonHeight);
+Rectangle Fold = new Rectangle(xPlace + (buttonWidth * 3), yPlace, buttonWidth, buttonHeight);
+Rectangle Check = new Rectangle(xPlace + (buttonWidth * 4.5f), yPlace, buttonWidth, buttonHeight);
+List<Rectangle> buttons = new List<Rectangle>()
 {
-    Console.Clear();
+    Bet,
+    Call,
+    Fold,
+    Check
+};
+List<string> names = new List<string>()
+{
+    "Bet",
+    "Call",
+    "Fold",
+    "Check"
+};
+//-----------------------------------------------------------------------------------------------------
+    List<Card> AllOppCards = new List<Card>(7);
+    List<Card> AllPlayerCards = new List<Card>(7);
+//----------------------------------All Cards Lists----------------------------------------------------
+
+
+while (!Raylib.WindowShouldClose())
+{
+    MousePos = Raylib.GetMousePosition();
+    Raylib.BeginDrawing();
+    Raylib.ClearBackground(Color.WHITE);
+
+    Raylib.DrawText($"${table.pot} in the pot", windowWidth - 150, 100, 25, Color.BLACK);
+
+    // ---------------------------Cards--------------------------------
+    int xDisplay = windowWidth / 8;
+    foreach (Card c in h.hand)
+    {
+        Raylib.DrawRectangle(xDisplay, 100, 150, 200, Color.GRAY);
+        Raylib.DrawRectangleLines(xDisplay, 100, 150, 200, Color.BLACK);
+        Raylib.DrawText($"{c.printName}", xDisplay + 5, 175, 20, Color.RED);
+        xDisplay += xDisplay * 2;
+    }
+    //------------------------------------------------------------------------
+    if (step == 0)
+    {
+        clearLists();
+        d.fillDeck();
+        d.shuffleDeck();
+        step++;
+    }
+    if (step == 1)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            if (i % 2 != 0)
+                h.hand.Add(d.deck[i]);
+            else
+                o.hand.Add(d.deck[i]);
+        }
+        myTurn = true;
+        step++;
+    }
+    if (step == 2)
+    {
+        UpdateLists();
+        o.calculateNextMove(o, h, o.hand, AllOppCards, table.table, table);
+        step++;
+    }
+    if (step == 3)
+    {
+        
+    }
+
+    if (myTurn)
+    {
+        DisplayButtons();
+    }
+
+    Raylib.EndDrawing();
+}
+
+void clearLists()
+{
     table.table.Clear();
     h.hand.Clear();
     o.hand.Clear();
-    d.fillDeck();
-    d.shuffleDeck();
-    int cardsPlace = 0;
-    Console.ReadLine();
-    for (int i = cardsPlace; i < 4; i++)
-    {
-        if (i % 2 != 0)
-            h.hand.Add(d.deck[i]);
-        else
-            o.hand.Add(d.deck[i]);
-        cardsPlace++;
-    }
-    foreach (Card c in h.hand)
-    {
-        Console.WriteLine(c.printName);
-    }
-    Console.WriteLine("Would you like to bet? type 1 if yes, press enter to continue!");
-    string choise = Console.ReadLine();
-    int choiseInt;
-    int.TryParse(choise, out choiseInt);
-    if (choiseInt == 1)
-    {
-        Console.WriteLine("How much?");
-        string stakeString = Console.ReadLine();
-        int stake;
-        int.TryParse(stakeString, out stake);
-        h.bet(h, table, stake);
-        Console.ReadLine();
-        Console.WriteLine($"There is ${table.pot} in the pot and you have ${h.money}");
-    }
-    Console.ReadLine();
-    int temp = cardsPlace;
-    for (int i = cardsPlace; i < temp + 3; i++)
-    {
-        table.table.Add(d.deck[i]);
-        cardsPlace++;
-    }
-    Console.Clear();
-    Console.WriteLine("On The Tabel:");
-    foreach (Card c in table.table)
-    {
-        Console.WriteLine(c.printName);
-    }
-    Console.WriteLine("\nIn Your Hand:");
-    foreach (Card c in h.hand)
-    {
-        Console.WriteLine(c.printName);
-    }
-    Console.ReadLine();
-    table.table.Add(d.deck[cardsPlace]);
-    cardsPlace++;
-    Console.Clear();
-    Console.WriteLine("On The Tabel:");
-    foreach (Card c in table.table)
-    {
-        Console.WriteLine(c.printName);
-    }
-    Console.WriteLine("\nIn Your Hand:");
-    foreach (Card c in h.hand)
-    {
-        Console.WriteLine(c.printName);
-    }
-    Console.ReadLine();
-    table.table.Add(d.deck[cardsPlace]);
-    cardsPlace++;
-    Console.Clear();
-    Console.WriteLine("On The Tabel:");
-    foreach (Card c in table.table)
-    {
-        Console.WriteLine(c.printName);
-    }
-    Console.WriteLine("\nIn Your Hand:");
-    foreach (Card c in h.hand)
-    {
-        Console.WriteLine(c.printName);
-    }
-    Console.ReadLine();
-    Console.WriteLine("\nIn Your Opponent's Hand:");
-    foreach (Card c in o.hand)
-    {
-        Console.WriteLine(c.printName);
-    }
-
-    displayResult();
-    displayResults();
-    Console.WriteLine(result);
-    Console.WriteLine(OppResult);
-    if (playerScore > OppScore)
-    {
-        Console.WriteLine("You Won!");
-        h.money += table.pot;
-        table.pot = 0;
-    }
-    else if (OppScore > playerScore)
-    {
-        Console.WriteLine("Your Opponent Won!");
-        o.money += table.pot;
-        table.pot = 0;
-    }
-    else
-    {
-        Console.WriteLine("It's a Tie!");
-        h.money += table.pot/2;
-        o.money += table.pot/2;
-        table.pot = 0;
-    }
-
-    Console.ReadLine();
 }
 
-
-void displayResult()
+void DisplayButtons()
 {
-    int point()
+    for (int i = 0; i < buttons.Count; i++)
     {
-        List<Card> allCards = new List<Card>();
-        foreach (Card c in table.table)
+        Raylib.DrawRectangleRec(buttons[i], Color.GRAY);
+        Raylib.DrawRectangleLinesEx(buttons[i], 2, Color.BLACK);
+        Raylib.DrawText($"{names[i]}", (int)buttons[i].X + 5, (int)buttons[i].Y + (buttonHeight / 2), 20, Color.BLACK);
+        if (Raylib.CheckCollisionPointRec(MousePos, buttons[i]))
         {
-            allCards.Add(c);
-        }
-        foreach (Card c in h.hand)
-        {
-            allCards.Add(c);
-        }
-        int score = 0;
-
-        //CHECK PAIR AMOUNT
-        int sameCount = 0;
-        foreach (Card c in table.table)
-        {
-            if (h.hand[0].value == c.value)
-                sameCount++;
-            if (h.hand[1].value == c.value)
-                sameCount++;
-        }
-        if (h.hand[0].value == h.hand[1].value && sameCount < 4)
-            sameCount++;
-        score = sameCount;
-
-        // CHECK FOR FLUSH
-        foreach (Card c in allCards)
-        {
-            int sameSuitCount = 0;
-            for (int i = 0; i < allCards.Count; i++)
+            Raylib.DrawRectangleRec(buttons[i], Color.SKYBLUE);
+            Raylib.DrawRectangleLinesEx(buttons[i], 3, Color.BLACK);
+            Raylib.DrawText($"{names[i]}", (int)buttons[i].X + 5, (int)buttons[i].Y + (buttonHeight / 2), 20, Color.RED);
+            if (Raylib.IsMouseButtonPressed(MouseButton.MOUSE_BUTTON_LEFT))
             {
-                if (allCards[i] != c)
-                {
-                    if (allCards[i].suit == c.suit)
-                        sameSuitCount++;
-                }
-            }
-            if (sameSuitCount >= 4)
-                score = 5;
-        }
-
-        //CHECK FOR STRAIGHT
-        int stepCount = 0;
-        foreach (Card c in allCards)
-        {
-            for (int i = 0; i < allCards.Count; i++)
-            {
-                int steps = 1;
-                int start = c.value;
-                int next = start + 1;
-                if (allCards[i].value == next)
-                {
-                    next++;
-                    steps++;
-                    for (int x = 0; x < allCards.Count; x++)
-                    {
-                        if (allCards[x].value == next)
-                        {
-                            next++;
-                            steps++;
-                            for (int y = 0; y < allCards.Count; y++)
-                            {
-                                if (allCards[y].value == next)
-                                {
-                                    next++;
-                                    steps++;
-                                    for (int z = 0; z < allCards.Count; z++)
-                                    {
-                                        if (allCards[z].value == next)
-                                        {
-                                            next++;
-                                            steps++;
-                                            stepCount = steps;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                Actions(i);
+                myTurn = false;
             }
         }
-        if (stepCount >= 5 && score == 5)
-            score = 7;
-        else if (stepCount >= 5)
-            score = 6;
-
-        //CHECK FOR FULL HOUSE
-        bool three = false;
-        bool two = false;
-        foreach (Card c in allCards)
-        {
-            int counter = 0;
-            foreach (Card l in allCards)
-            {
-                if (c != l)
-                {
-                    if (c.value == l.value)
-                        counter++;
-                }
-            }
-            if (counter == 3)
-                three = true;
-            if (counter == 2)
-                two = true;
-        }
-        if (two && three)
-            score = 8;
-        playerScore = score;
-        return score;
     }
-    switch (point())
+}
+
+void Actions(int index)
+{
+    switch(index)
     {
+        case 0:
+            h.bet(h, table, 50);
+            break;
         case 1:
-            result = "You Have A Pair!";
+            h.call(h, table);
             break;
         case 2:
-            result = "You Have Two Pairs!";
             break;
         case 3:
-            result = "You Have Three Of A Kind!";
-            break;
-        case 4:
-            result = "You Have Four Of A Kind!";
-            break;
-        case 5:
-            result = "You Have A Flush";
-            break;
-        case 6:
-            result = "You Have A Straight";
-            break;
-        case 7:
-            result = "You Have A Straight Flush";
-            break;
-        case 8:
-            result = "You Have Full House";
-            break;
-        default:
-            result = "You Have Nothing";
+            h.fold(h);
             break;
     }
 }
 
-
-
-void displayResults()
+void UpdateLists()
 {
-    int point()
+    AllOppCards.Clear();
+    AllPlayerCards.Clear();
+foreach(Card c in table.table)
     {
-        List<Card> allCards = new List<Card>();
-        foreach (Card c in table.table)
-        {
-            allCards.Add(c);
-        }
-        foreach (Card c in o.hand)
-        {
-            allCards.Add(c);
-        }
-        int score = 0;
-
-        //CHECK PAIR AMOUNT
-        int sameCount = 0;
-        foreach (Card c in table.table)
-        {
-            if (o.hand[0].value == c.value)
-                sameCount++;
-            if (o.hand[1].value == c.value)
-                sameCount++;
-        }
-        if (h.hand[0].value == h.hand[1].value && sameCount < 4)
-            sameCount++;
-        score = sameCount;
-
-        // CHECK FOR FLUSH
-        foreach (Card c in allCards)
-        {
-            int sameSuitCount = 0;
-            for (int i = 0; i < allCards.Count; i++)
-            {
-                if (allCards[i] != c)
-                {
-                    if (allCards[i].suit == c.suit)
-                        sameSuitCount++;
-                }
-            }
-            if (sameSuitCount >= 4)
-                score = 5;
-        }
-
-        //CHECK FOR STRAIGHT
-        int stepCount = 0;
-        foreach (Card c in allCards)
-        {
-            for (int i = 0; i < allCards.Count; i++)
-            {
-                int steps = 1;
-                int start = c.value;
-                int next = start + 1;
-                if (allCards[i].value == next)
-                {
-                    next++;
-                    steps++;
-                    for (int x = 0; x < allCards.Count; x++)
-                    {
-                        if (allCards[x].value == next)
-                        {
-                            next++;
-                            steps++;
-                            for (int y = 0; y < allCards.Count; y++)
-                            {
-                                if (allCards[y].value == next)
-                                {
-                                    next++;
-                                    steps++;
-                                    for (int z = 0; z < allCards.Count; z++)
-                                    {
-                                        if (allCards[z].value == next)
-                                        {
-                                            next++;
-                                            steps++;
-                                            stepCount = steps;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (stepCount >= 5 && score == 5)
-            score = 7;
-        else if (stepCount >= 5)
-            score = 6;
-
-        //CHECK FOR FULL HOUSE
-        bool three = false;
-        bool two = false;
-        foreach (Card c in allCards)
-        {
-            int counter = 0;
-            foreach (Card l in allCards)
-            {
-                if (c != l)
-                {
-                    if (c.value == l.value)
-                        counter++;
-                }
-            }
-            if (counter == 3)
-                three = true;
-            if (counter == 2)
-                two = true;
-        }
-        if (two && three)
-            score = 8;
-        OppScore = score;
-        return score;
+        AllOppCards.Add(c);
+        AllPlayerCards.Add(c);
     }
-    switch (point())
+    foreach(Card c in h.hand)
     {
-        case 1:
-            OppResult = "Your Opponent Have A Pair!";
-            break;
-        case 2:
-            OppResult = "Your Opponent Have Two Pairs!";
-            break;
-        case 3:
-            OppResult = "Your Opponent Have Three Of A Kind!";
-            break;
-        case 4:
-            OppResult = "Your Opponent Have Four Of A Kind!";
-            break;
-        case 5:
-            OppResult = "Your Opponent Have A Flush";
-            break;
-        case 6:
-            OppResult = "Your Opponent Have A Straight";
-            break;
-        case 7:
-            OppResult = "Your Opponent Have A Straight Flush";
-            break;
-        case 8:
-            OppResult = "Your Opponent Have Full House";
-            break;
-        default:
-            OppResult = "Your Opponent Have Nothing";
-            break;
+        AllPlayerCards.Add(c);
+    }
+    foreach(Card c in o.hand)
+    {
+        AllOppCards.Add(c);
     }
 }

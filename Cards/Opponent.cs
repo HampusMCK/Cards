@@ -1,5 +1,6 @@
 ﻿public class Opponent : Player
 {
+    bool _call = false;
     public Opponent()
     {
         name = "John";
@@ -8,13 +9,14 @@
 
     public override void bet(Player player, Table table, int stake)
     {
-        stake = Random.Shared.Next(0, 50);
+        if (!_call)
+            stake = Random.Shared.Next(0, 50);
         player.money -= stake;
         table.pot += stake;
         player.betted += stake;
     }
 
-    public void calculateNextMove(Player player, Player opp, List<Card> hand, List<Card> allCards, List<Card> table, Table table1)
+    public void calculateNextMove(Player player, Human opp, List<Card> hand, List<Card> allCards, List<Card> table, Table table1)
     {
         int score()
         {
@@ -130,16 +132,26 @@
         if (opp.betted > player.betted)
         {
             int action = Random.Shared.Next(0, score() + 2);
-            if (action > 1)
+            if (action >= 1)
+            {
+                _call = true;
                 call(this, table1);
+            }
             else
+            {
+                _call = false;
                 fold(this);
+            }
         }
         else
         {
+            _call = false;
             int action = Random.Shared.Next(0, score() + 2);
             if (action > 1)
+            {
                 bet(this, table1, 0);
+                opp.myTurn = true;
+            }
         }
     }
 }

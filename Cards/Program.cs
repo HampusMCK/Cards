@@ -13,6 +13,7 @@ Raylib.SetWindowPosition(windowWidth / 16, windowHeight / 16);
 //-----------------------------------References---------------------------------------------
 Deck d = new();
 Human h = new();
+Player p = new();
 Opponent o = new();
 Table table = new();
 //------------------------------------------------------------------------------------------
@@ -54,15 +55,18 @@ List<string> names = new List<string>()
     "Check"
 };
 //-----------------------------------------------------------------------------------------------------
+
+//---------------------------------------Cards Data----------------------------------------------------
 List<Card> AllOppCards = new List<Card>(7);
 List<Card> AllPlayerCards = new List<Card>(7);
-//----------------------------------All Cards Lists----------------------------------------------------
-
+int cardsPlaced = 0;
+//-----------------------------------------------------------------------------------------------------
 
 while (!Raylib.WindowShouldClose())
 {
     MousePos = Raylib.GetMousePosition();
     Raylib.BeginDrawing();
+    cardsPlaced = table.table.Count + h.hand.Count + o.hand.Count;
     if (!moneyDevided && !h.folded && !o.folded)
     {
         Raylib.ClearBackground(Color.WHITE);
@@ -91,96 +95,46 @@ while (!Raylib.WindowShouldClose())
             index++;
             xTableDisplay = (windowWidth / 8) + (200 * index);
         }
+        //------------------------------------------------------------------------
     }
-    //------------------------------------------------------------------------
     if (step == 0)
     {
-        clearLists();
-        d.fillDeck();
-        d.shuffleDeck();
-        h.folded = false;
-        o.folded = false;
-        moneyDevided = false;
-        h.betted = 0;
-        o.betted = 0;
+        reset();
         step++;
     }
     if (step == 1)
     {
-        for (int i = 0; i < 4; i++)
-        {
-            if (i % 2 != 0)
-                h.hand.Add(d.deck[i]);
-            else
-                o.hand.Add(d.deck[i]);
-        }
+        p.dealToPlayers(h, o, d);
         h.myTurn = true;
         step++;
     }
     if (h.folded || o.folded && step != 0)
-        step = 10;
+        step = 3;
     if (!h.folded && !o.folded)
     {
-        if (step == 2 && !h.myTurn)
+        if (h.myTurn)
+        {
+            DisplayButtons();
+        }
+        if (o.myTurn)
         {
             UpdateLists();
-            o.calculateNextMove(o, h, o.hand, AllOppCards, table.table, table);
-            step++;
+            o.calculateNextMove(o, h, o.hand, AllOppCards, table);
         }
-        if (step == 3 && !h.myTurn)
+        if (!o.myTurn && !h.myTurn && cardsPlaced != 9)
         {
-            for (int i = 4; i < 7; i++)
-            {
-                table.table.Add(d.deck[i]);
-            }
-            step++;
+            table.dealCards(table, d, cardsPlaced, (10 - cardsPlaced) / 2);
             h.myTurn = true;
-        }
-        if (step == 4 && !h.myTurn)
-        {
-            UpdateLists();
-            o.calculateNextMove(o, h, o.hand, AllOppCards, table.table, table);
-            step++;
-        }
-        if (step == 5 && !h.myTurn)
-        {
-            for (int i = 7; i < 8; i++)
-            {
-                table.table.Add(d.deck[i]);
-            }
-            step++;
-            h.myTurn = true;
-        }
-        if (step == 6 && !h.myTurn)
-        {
-            UpdateLists();
-            o.calculateNextMove(o, h, o.hand, AllOppCards, table.table, table);
-            step++;
-        }
-        if (step == 7 && !h.myTurn)
-        {
-            for (int i = 8; i < 9; i++)
-            {
-                table.table.Add(d.deck[i]);
-            }
-            step++;
-            h.myTurn = true;
-        }
-        if (step == 8 && !h.myTurn)
-        {
-            UpdateLists();
-            o.calculateNextMove(o, h, o.hand, AllOppCards, table.table, table);
-            step++;
         }
     }
-    if (step == 9 && !h.myTurn)
+    if (cardsPlaced == 9 && !o.myTurn && !h.myTurn)
     {
         UpdateLists();
         h.calculateResults(h, AllPlayerCards, table);
         o.calculateResults(o, AllOppCards, table);
-        step++;
+        step = 3;
     }
-    if (step == 10)
+    if (step == 3)
     {
         if (h.score > o.score || o.folded)
         {
@@ -202,21 +156,19 @@ while (!Raylib.WindowShouldClose())
             {
                 h.money += table.pot;
                 table.pot = 0;
-                moneyDevided = true;
             }
             else if ((o.score > h.score || h.folded) && !o.folded)
             {
                 o.money += table.pot;
                 table.pot = 0;
-                moneyDevided = true;
             }
             else
             {
                 o.money += table.pot / 2;
                 h.money += table.pot / 2;
                 table.pot = 0;
-                moneyDevided = true;
             }
+            moneyDevided = true;
         }
         Raylib.DrawRectangleRec(Restart, Color.GRAY);
         Raylib.DrawRectangleLinesEx(Restart, 2, Color.BLACK);
@@ -231,10 +183,6 @@ while (!Raylib.WindowShouldClose())
         }
     }
 
-    if (h.myTurn)
-    {
-        DisplayButtons();
-    }
 
     Raylib.EndDrawing();
 }
@@ -273,6 +221,7 @@ void Actions(int index)
     {
         case 0:
             h.bet(h, table, 50);
+            o.myTurn = true;
             break;
         case 1:
             h.call(h, table);
@@ -281,6 +230,7 @@ void Actions(int index)
             h.fold(h);
             break;
         case 3:
+            o.myTurn = true;
             break;
     }
 }
@@ -302,4 +252,18 @@ void UpdateLists()
     {
         AllOppCards.Add(c);
     }
+}
+
+void reset()
+{
+    clearLists();
+    d.fillDeck();
+    d.shuffleDeck();
+    h.folded = false;
+    o.folded = false;
+    moneyDevided = false;
+    h.betted = 0;
+    o.betted = 0;
+    h.myTurn = false;
+    o.myTurn = false;
 }

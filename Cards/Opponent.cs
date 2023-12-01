@@ -16,11 +16,11 @@
         player.betted += stake;
     }
 
-    public void calculateNextMove(Player player, Human opp, List<Card> hand, List<Card> allCards, List<Card> table, Table table1)
+    public void calculateNextMove(Player player, Human opp, List<Card> hand, List<Card> allCards, Table table)
     {
         int score()
         {
-            foreach (Card c in table)
+            foreach (Card c in table.table)
             {
                 allCards.Add(c);
             }
@@ -32,7 +32,7 @@
 
             //CHECK PAIR AMOUNT
             int sameCount = 0;
-            foreach (Card c in table)
+            foreach (Card c in table.table)
             {
                 if (hand[0].value == c.value)
                     sameCount++;
@@ -135,7 +135,7 @@
             if (action >= 1)
             {
                 _call = true;
-                call(this, table1);
+                call(this, table);
             }
             else
             {
@@ -149,9 +149,10 @@
             int action = Random.Shared.Next(0, score() + 2);
             if (action > 1)
             {
-                bet(this, table1, 0);
+                bet(this, table, 0);
                 opp.myTurn = true;
             }
         }
+        player.myTurn = false;
     }
 }

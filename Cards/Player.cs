@@ -7,12 +7,24 @@
     public int score;
     public string result;
     public bool folded;
+    public bool myTurn;
 
     public virtual void bet(Player player, Table table, int stake)
     {
         player.money -= stake;
         table.pot += stake;
         player.betted += stake;
+    }
+
+    public void dealToPlayers(Player p1, Player p2, Deck deck)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            if (i % 2 != 0)
+                p1.hand.Add(deck.deck[i]);
+            else
+                p2.hand.Add(deck.deck[i]);
+        }
     }
 
     public void call(Player player, Table table)

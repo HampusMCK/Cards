@@ -43,16 +43,16 @@ Rectangle Restart = new Rectangle((windowWidth / 2) - (buttonWidth / 2), (window
 List<Rectangle> buttons = new List<Rectangle>()
 {
     Bet,
+    Check,
     Call,
-    Fold,
-    Check
+    Fold
 };
 List<string> names = new List<string>()
 {
     "Bet",
+    "Check",
     "Call",
-    "Fold",
-    "Check"
+    "Fold"
 };
 //-----------------------------------------------------------------------------------------------------
 
@@ -74,7 +74,7 @@ while (!Raylib.WindowShouldClose())
         Raylib.DrawText($"${table.pot} in the pot", windowWidth - 300, 100, 25, Color.BLACK);
         Raylib.DrawText($"You have ${h.money}", windowWidth - 300, 50, 25, Color.BLACK);
 
-        // ---------------------------Cards--------------------------------
+        // ---------------------------Draw Cards--------------------------------
         int xDisplay = windowWidth / 8;
         int index = 0;
         foreach (Card c in h.hand)
@@ -97,37 +97,40 @@ while (!Raylib.WindowShouldClose())
         }
         //------------------------------------------------------------------------
     }
-    if (step == 0)
+    if (step == 0) //Empty all Lists
     {
         reset();
         step++;
     }
-    if (step == 1)
+
+    if (step == 1) //Deal cards to players and start players turn
     {
         p.dealToPlayers(h, o, d);
         h.myTurn = true;
         step++;
     }
-    if (h.folded || o.folded && step != 0)
+
+    if (h.folded || o.folded && step != 0) //if someone folded, move to last scene
         step = 3;
-    if (!h.folded && !o.folded)
+
+    if (!h.folded && !o.folded) // Play as long as no one folded
     {
-        if (h.myTurn)
+        if (h.myTurn) // Players turn
         {
             DisplayButtons();
         }
-        if (o.myTurn)
+        if (o.myTurn) // AIs turn
         {
             UpdateLists();
             o.calculateNextMove(o, h, o.hand, AllOppCards, table);
         }
-        if (!o.myTurn && !h.myTurn && cardsPlaced != 9)
+        if (!o.myTurn && !h.myTurn && cardsPlaced != 9)//Place cards on table
         {
             table.dealCards(table, d, cardsPlaced, (10 - cardsPlaced) / 2);
             h.myTurn = true;
         }
     }
-    if (cardsPlaced == 9 && !o.myTurn && !h.myTurn)
+    if (cardsPlaced == 9 && !o.myTurn && !h.myTurn) // if finish playing calculate results
     {
         UpdateLists();
         h.calculateResults(h, AllPlayerCards, table);
@@ -136,6 +139,7 @@ while (!Raylib.WindowShouldClose())
     }
     if (step == 3)
     {
+        // ----------- Background color based on Win/Tie/Lose --------
         if (h.score > o.score || o.folded)
         {
             Raylib.ClearBackground(Color.GREEN);
@@ -148,21 +152,26 @@ while (!Raylib.WindowShouldClose())
         {
             Raylib.ClearBackground(Color.ORANGE);
         }
+        // ------------------------------------------------------------
+
+        // -------------------Write out Results------------------------
         Raylib.DrawText($"Player1, {h.result}", 800, 100, 30, Color.BLACK);
         Raylib.DrawText($"John, {o.result}", 800, 150, 30, Color.BLACK);
-        if (!moneyDevided)
+        //-------------------------------------------------------------
+
+        if (!moneyDevided) // check if money has been given to winner or split if tie to ensure no repeat every frame
         {
-            if ((h.score > o.score || o.folded) && !h.folded)
+            if ((h.score > o.score || o.folded) && !h.folded) // if player won
             {
                 h.money += table.pot;
                 table.pot = 0;
             }
-            else if ((o.score > h.score || h.folded) && !o.folded)
+            else if ((o.score > h.score || h.folded) && !o.folded) // if AI won
             {
                 o.money += table.pot;
                 table.pot = 0;
             }
-            else
+            else // if Tie
             {
                 o.money += table.pot / 2;
                 h.money += table.pot / 2;
@@ -170,6 +179,7 @@ while (!Raylib.WindowShouldClose())
             }
             moneyDevided = true;
         }
+        //-------------Draw Reset Button-------------
         Raylib.DrawRectangleRec(Restart, Color.GRAY);
         Raylib.DrawRectangleLinesEx(Restart, 2, Color.BLACK);
         Raylib.DrawText("Restart!", (int)Restart.X + 5, (int)Restart.Y + 5, 25, Color.BLACK);
@@ -187,16 +197,19 @@ while (!Raylib.WindowShouldClose())
     Raylib.EndDrawing();
 }
 
-void clearLists()
+void clearLists() // empty all lists
 {
     table.table.Clear();
     h.hand.Clear();
     o.hand.Clear();
 }
 
-void DisplayButtons()
+void DisplayButtons() // display players options
 {
-    for (int i = 0; i < buttons.Count; i++)
+    int c = 0;
+    if (o.betted > h.betted)
+        c = 2;
+    for (int i = c; i < c + 2; i++)
     {
         Raylib.DrawRectangleRec(buttons[i], Color.GRAY);
         Raylib.DrawRectangleLinesEx(buttons[i], 2, Color.BLACK);
@@ -215,7 +228,7 @@ void DisplayButtons()
     }
 }
 
-void Actions(int index)
+void Actions(int index) //Execute action based on pressed button by player
 {
     switch (index)
     {
@@ -223,19 +236,19 @@ void Actions(int index)
             h.bet(h, table, 50);
             o.myTurn = true;
             break;
-        case 1:
-            h.call(h, table);
+        case 1: // check
+            o.myTurn = true;
             break;
         case 2:
-            h.fold(h);
+            h.call(h, table);
             break;
         case 3:
-            o.myTurn = true;
+            h.fold(h);
             break;
     }
 }
 
-void UpdateLists()
+void UpdateLists() // create lists with all usable cards for player and AI
 {
     AllOppCards.Clear();
     AllPlayerCards.Clear();
@@ -254,7 +267,7 @@ void UpdateLists()
     }
 }
 
-void reset()
+void reset() //Clear Lists, reshuffle deck and reset all data
 {
     clearLists();
     d.fillDeck();

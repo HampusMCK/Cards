@@ -20,14 +20,6 @@
     {
         int score()
         {
-            foreach (Card c in table.table)
-            {
-                allCards.Add(c);
-            }
-            foreach (Card c in hand)
-            {
-                allCards.Add(c);
-            }
             int score = 0;
 
             //CHECK PAIR AMOUNT
@@ -149,7 +141,7 @@
             int action = Random.Shared.Next(0, score() + 2);
             if (action > 1)
             {
-                bet(this, table, 0);
+                bet(player, table, 0);
                 opp.myTurn = true;
             }
         }

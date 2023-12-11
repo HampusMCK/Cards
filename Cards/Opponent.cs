@@ -4,7 +4,7 @@
     public Opponent()
     {
         name = "John";
-        money = 500;
+        money = 1000;
     }
 
     public override void bet(Player player, Table table, int stake)

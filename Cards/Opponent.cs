@@ -1,6 +1,6 @@
 ﻿public class Opponent : Player
 {
-    bool _call = false;
+    private bool _call = false;
     public Opponent()
     {
         name = "John";
